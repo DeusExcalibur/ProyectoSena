@@ -36,12 +36,12 @@
 
     <div style="width: 30dvw;" class="login-card">
         <a href="./inicioPrincipal.html">Volver</a>
-        <form class="row g-3 needs-validation mt-2" novalidate>
+        <form id="crearCuentaForm" class="row g-3 needs-validation mt-2" novalidate>
             <h3 id="logo">Crear Cuenta</h3>
           
             <div class="col-md-12 mt-4">
                 <label for="nombre1" class="form-label">Primer Nombre</label>
-                <input type="text" class="form-control" id="nombre1" placeholder="Ingresa tu 1er nombre" required>
+                <input type="text" class="form-control" id="nombre1" name="nombre1" placeholder="Ingresa tu 1er nombre" required>
                 <div class="invalid-feedback">
                     Por favor ingresa tu primer nombre.
                 </div>
@@ -49,29 +49,28 @@
 
             <div class="col-md-12 mt-4">
                 <label for="nombre2" class="form-label">Segundo Nombre</label>
-                <input type="text" class="form-control" id="nombre2" placeholder="Ingresa tu 2do nombre (opcional)">
+                <input type="text" class="form-control" id="nombre2" name="nombre2" placeholder="Ingresa tu 2do nombre (opcional)">
             </div>
 
             <div class="col-md-12">
                 <label for="apellido1" class="form-label">Primer Apellido</label>
-                <input type="text" class="form-control" id="apellido1" placeholder="Ingresa tu 1er apellido" required>
+                <input type="text" class="form-control" id="apellido1" name="apellido1" placeholder="Ingresa tu 1er apellido" required>
                 <div class="invalid-feedback">
                     Por favor ingresa tu primer apellido.
                 </div>
             </div>
 
             <div class="col-md-12">
-                <label for="apellido2" class="form-label">Primer Apellido</label>
-                <input type="text" class="form-control" id="apellido2" placeholder="Ingresa tu 2do apellido" required>
+                <label for="apellido2" class="form-label">Segundo Apellido</label>
+                <input type="text" class="form-control" id="apellido2" name="apellido2" placeholder="Ingresa tu 2do apellido" required>
                 <div class="invalid-feedback">
                     Por favor ingresa tu segundo apellido.
                 </div>
             </div>
 
-
             <div class="col-md-12">
                 <label for="tipoDocumento" class="form-label">Tipo de Documento</label>
-                <select class="form-select" id="tipoDocumento" required>
+                <select class="form-select" id="tipoDocumento" name="tipoDocumento" required>
                     <option selected disabled value="">Selecciona un tipo</option>
                     <option value="CC">Cédula de Ciudadanía</option>
                     <option value="TI">Tarjeta de Identidad</option>
@@ -85,7 +84,7 @@
 
             <div class="col-md-12">
                 <label for="numeroDocumento" class="form-label">Número de Documento</label>
-                <input type="number" class="form-control" id="numeroDocumento" placeholder="Ingresa tu número de documento" required>
+                <input type="number" class="form-control" id="numeroDocumento" name="numeroDocumento" placeholder="Ingresa tu número de documento" required>
                 <div class="invalid-feedback">
                     Por favor ingresa tu número de documento.
                 </div>
@@ -93,7 +92,7 @@
 
             <div class="col-md-12">
                 <label for="correo" class="form-label">Correo Electrónico</label>
-                <input type="email" class="form-control" id="correo" placeholder="Ingresa tu correo" required>
+                <input type="email" class="form-control" id="correo" name="correo" placeholder="Ingresa tu correo" required>
                 <div class="invalid-feedback">
                     Por favor ingresa un correo válido.
                 </div>
@@ -101,7 +100,7 @@
 
             <div class="col-md-12">
                 <label for="password" class="form-label">Contraseña</label>
-                <input type="password" class="form-control" id="password" placeholder="Crea una contraseña" required>
+                <input type="password" class="form-control" id="password" name="password" placeholder="Crea una contraseña" required>
                 <div class="invalid-feedback">
                     Por favor crea una contraseña.
                 </div>
@@ -122,26 +121,45 @@
 </body>
 <script>
     (() => {
-  'use strict'
+        'use strict'
 
-  // Fetch all the forms we want to apply custom Bootstrap validation styles to
-  const forms = document.querySelectorAll('.needs-validation')
+        const forms = document.querySelectorAll('.needs-validation')
 
-  // Loop over them and prevent submission
-  Array.from(forms).forEach(form => {
-    form.addEventListener('submit', event => {
-        event.preventDefault()
-        event.stopPropagation()
-      if (!form.checkValidity()) {
-        form.classList.add('was-validated')
-      }
-      if (form.checkValidity()) {
-        alert('Cuenta creada con exito')
-        window.location.href = 'crearCuenta.html';
-      }
+        Array.from(forms).forEach(form => {
+            form.addEventListener('submit', event => {
+                event.preventDefault()
+                event.stopPropagation()
+                if (!form.checkValidity()) {
+                    form.classList.add('was-validated')
+                }
+                if (form.checkValidity()) {
+                    const formData = new FormData(form);
+                    const data = Object.fromEntries(formData.entries());
 
-    }, false)
-  })
-})()
+                    fetch('/crearCuenta', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(data),
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.error) {
+                            alert(data.error);
+                            return;
+                        } else {
+                            alert(data.message);
+                            window.location.href = "/iniciarSesion";
+                            return;
+                        }
+                    })
+                    .catch((error) => {
+                        console.error('Error:', error);
+                    });
+                }
+            }, false)
+        })
+    })()
 </script>
 </html>

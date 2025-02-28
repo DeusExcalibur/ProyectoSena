@@ -1,16 +1,13 @@
-//Dependencias
 require("dotenv").config();
 const express = require("express");
 const mysql = require("mysql2/promise");
 const path = require("path");
 
-//Configuraciones
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "public")));
 
-//Conexion a la DB
 const db = mysql.createPool({
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
@@ -18,7 +15,6 @@ const db = mysql.createPool({
     database: process.env.DB_NAME,
 });
 
-//Testear la conexion con la DB
 (async () => {
     try {
         const connection = await db.getConnection();
@@ -29,20 +25,10 @@ const db = mysql.createPool({
     }
 })();
 
-//Definir la ruta principal
 app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "paginaPrincipal.html"));
 });
 
-app.get("/pqrs", (req, res) => {
-    res.sendFile(path.join(__dirname, "public", "pqrs.html"));
-});
-
-app.get("/mapaNavegacion", (req, res) => {
-    res.sendFile(path.join(__dirname, "public", "mapaNavegacion.html"));
-});
-
-//Definir la ruta iniciarSesion
 app.get("/iniciarSesion", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "iniciarSesion.html"));
 });
@@ -80,26 +66,48 @@ app.post("/iniciarSesion", async (req, res) => {
     }
 });
 
-//Definir la ruta crearCuenta
 app.get("/crearCuenta", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "crearCuenta.html"));
 });
 
-//Probar error general
+app.post("/crearCuenta", async (req, res) => {
+    const { nombre1, nombre2, apellido1, apellido2, tipoDocumento, numeroDocumento, correo, password } = req.body;
+
+    try {
+        const [existingUser] = await db.query(
+            `SELECT * FROM usuarios WHERE correo = ? OR documento = ?`,
+            [correo, numeroDocumento]
+        );
+
+        if (existingUser.length > 0) {
+            return res.status(400).json({ error: "El correo o el número de documento ya están registrados." });
+        }
+
+        await db.query(
+            `INSERT INTO usuarios (nombre1, nombre2, apellido1, apellido2, tipoDocumento, documento, correo, contrasena, id_plan) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [nombre1, nombre2, apellido1, apellido2, tipoDocumento, numeroDocumento, correo, password, 1] // id_plan = 1 asumiendo que es el plan por defecto
+        );
+
+        res.status(201).json({ message: "Cuenta creada exitosamente." });
+    } catch (error) {
+        console.error("Error al crear la cuenta:", error);
+        res.status(500).json({ error: "Error interno del servidor al crear la cuenta." });
+    }
+});
+
 app.get("/generalError", (req, res, next) => {
     const error = new Error("¡Esto es un error general!");
     error.status = 400;
     next(error);
 });
 
-//Probar error 500
 app.get("/error", (req, res, next) => {
     const error = new Error("¡Esto es un error intencional!");
     error.status = 500;
     next(error);
 });
 
-//Probar error 404
 app.use((req, res, next) => {
     console.log("Ruta no encontrada:", req.url);
     const error = new Error("Ruta no encontrada");
@@ -107,7 +115,6 @@ app.use((req, res, next) => {
     next(error);
 });
 
-//Contralador de errores
 app.use((err, req, res, next) => {
     console.error("Error detectado:", err);
 
