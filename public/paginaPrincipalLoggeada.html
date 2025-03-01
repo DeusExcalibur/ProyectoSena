@@ -9,8 +9,7 @@
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <style>
         #map { height: 500px; width: 45vw; border: solid 2px; }
-        .input-container { margin-top: 10px; text-align: center;
-        }
+        .input-container { margin-top: 10px; text-align: center; }
     </style>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     <link rel="shortcut icon" href="https://cdn-icons-png.flaticon.com/512/5067/5067875.png" />
@@ -19,7 +18,7 @@
     <header class="mb-4 border border-dark">
         <nav class="navbar navbar-expand-lg sticky-top">
             <div class="container">
-                <a href="./inicioPrincipal.html"><img style="width: 50px; height: 50px; border-radius: 50%;" src="https://cdn-icons-png.flaticon.com/512/5067/5067875.png" alt="Logo"></a>
+                <a href="#"><img style="width: 50px; height: 50px; border-radius: 50%;" src="https://cdn-icons-png.flaticon.com/512/5067/5067875.png" alt="Logo"></a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
                 aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
@@ -39,7 +38,7 @@
                             <a class="nav-link" href="./pqrs.html">PQRS</a>
                         </li>
                     </ul>
-                    <button type="button" class="btn btn-light me-5">
+                    <button type="button" class="btn btn-light me-5" onclick="cerrarSesion()">
                         <a class="nav-link" href="/">Cerrar Sesión</a>
                     </button>
                 </div>
@@ -49,10 +48,12 @@
 
     <main class="container">
         <h1 class="text-center mt-5">APLICATIVO VISTA ESTADISTICA Y REPORTE DE ROBOS</h1>
+        <!-- Añadir el nombre y apellido del usuario -->
+        <h2 id="nombre-usuario" class="text-center"></h2>
 
         <section class="d-flex justify-content-around align-items-center my-4">
             <div class="search-map text-center">
-                <p>Busca el nombre del barrio de Chapinero el cuál quieres saber mas información</p>
+                <p>Busca la localidad de la cuál quieres saber mas información</p>
                 <div id="map"></div>
                 <div class="input-container">
                     <input style="width: 45vw;" id="location-input" type="text" placeholder="Ubicación seleccionada" readonly>
@@ -64,7 +65,7 @@
         </section>
 
         <section class="input-section text-center mt-5">
-            <input id="search-input" class="form-control mb-3 w-75 mx-auto"  type="text" placeholder="Ingrese una ubicación">
+            <input id="search-input" class="form-control mb-3 w-75 mx-auto" type="text" placeholder="Ingrese una ubicación">
             <a href="./resultados.html" class="btn btn-dark">Buscar</a>
         </section>
     </main>
@@ -88,54 +89,116 @@
             © 2024 Aplicativo de Robos. SENA, Centro de Servicios Financieros
         </p>
     </footer>
-</body>
-<script>
-    function removeFirstWord(text) {
-  // Verifica si el texto tiene al menos un espacio
-  if (text.includes(' ')) {
-    // Divide el texto en palabras y elimina la primera
-    const words = text.split(' ').slice(1);
-    // Une las palabras restantes y devuelve el resultado
-    return words.join(' ');
-  }
-  // Si no hay espacio, devuelve el texto original
-  return text;
-}
 
-    const map = L.map('map').setView([4.60971, -74.08175], 12); // Bogotá
-    
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 18,
-    }).addTo(map);
-
-    L.marker([4.645365, -74.057036]).addTo(map)
-        .bindPopup('Chapinero, Bogotá')
-        .openPopup();
-
-    map.on('click', function(e) {
-        const { lat, lng } = e.latlng;
-
-        // URL de la API de geocodificación inversa de Nominatim
-        const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`;
-
-        // Llamada a la API usando fetch para obtener los datos de la ubicación
-        fetch(url)
-            .then(response => response.json())
-            .then(data => {
-                
-                // Obtener el barrio y la localidad de los datos de la dirección
-                const address = data.address;
-                const barrio = address.neighbourhood || 'Barrio desconocido';
-                const localidad = address.suburb || 'Localidad desconocida';
-
-                // Concatenar barrio y localidad y mostrar en el input
-                document.getElementById('location-input').value = `${barrio}, ${localidad}`;
-                document.getElementById('search-input').value = removeFirstWord(localidad);
-            })
-            .catch(error => {
-                console.error('Error al obtener la ubicación:', error);
+    <script>
+        // Función para obtener los parámetros de la URL
+        function getQueryParams() {
+            const params = {};
+            window.location.search.slice(1).split('&').forEach(param => {
+                const [key, value] = param.split('=');
+                params[decodeURIComponent(key)] = decodeURIComponent(value);
             });
-    });
-</script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+            return params;
+        }
+
+        // Capturar los parámetros de la URL (si los hay)
+        const queryParams = getQueryParams();
+
+        // Guardar los datos en el localStorage (si se reciben desde la URL)
+        if (queryParams.nombre) localStorage.setItem('nombre', queryParams.nombre);
+        if (queryParams.apellido) localStorage.setItem('apellido', queryParams.apellido);
+        if (queryParams.plan) localStorage.setItem('plan', queryParams.plan);
+        if (queryParams.correo) localStorage.setItem('correo', queryParams.correo);
+
+        // Guardar la fecha de inicio de sesión en formato "mes-día" (si no está ya guardada)
+        if (!localStorage.getItem('fechaLogin')) {
+            const fechaActual = new Date();
+            const mes = String(fechaActual.getMonth() + 1).padStart(2, '0'); // Mes (1-12)
+            const dia = String(fechaActual.getDate()).padStart(2, '0'); // Día (1-31)
+            localStorage.setItem('fechaLogin', `${mes}-${dia}`);
+        }
+
+        // Verificar si hay datos en el localStorage
+        const nombre = localStorage.getItem('nombre');
+        const apellido = localStorage.getItem('apellido');
+        const plan = localStorage.getItem('plan');
+        const correo = localStorage.getItem('correo');
+        const fechaLogin = localStorage.getItem('fechaLogin');
+
+        // Verificar si el usuario ha iniciado sesión
+        if (!nombre || !apellido || !plan || !correo || !fechaLogin) {
+            // Redirigir a la página principal si no hay sesión
+            window.location.href = '/';
+        }
+
+        // Verificar la fecha de inicio de sesión
+        const fechaActual = new Date();
+        const mesActual = String(fechaActual.getMonth() + 1).padStart(2, '0'); // Mes actual (1-12)
+        const diaActual = String(fechaActual.getDate()).padStart(2, '0'); // Día actual (1-31)
+        const fechaActualFormato = `${mesActual}-${diaActual}`; // Formato "mes-día"
+
+        if (fechaLogin !== fechaActualFormato) {
+            // Borrar el localStorage si la fecha no coincide
+            localStorage.clear();
+            // Redirigir a la página principal
+            window.location.href = '/';
+        }
+
+        // Mostrar el nombre y apellido del usuario en el <h2>
+        if (nombre && apellido) {
+            document.getElementById('nombre-usuario').textContent = `Bienvenido, ${nombre} ${apellido}`;
+        }
+
+        // Función para cerrar sesión
+        function cerrarSesion() {
+            localStorage.clear(); // Borrar todos los datos del localStorage
+            window.location.href = "/"; // Redirigir a la página de inicio
+        }
+
+        // Mostrar los datos en la consola para verificar
+        console.log("Datos guardados en localStorage:", {
+            nombre: localStorage.getItem('nombre'),
+            apellido: localStorage.getItem('apellido'),
+            plan: localStorage.getItem('plan'),
+            correo: localStorage.getItem('correo'),
+            fechaLogin: localStorage.getItem('fechaLogin')
+        });
+
+        // Mapa (código existente)
+        const map = L.map('map').setView([4.60971, -74.08175], 12); // Bogotá
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 18,
+        }).addTo(map);
+
+        L.marker([4.645365, -74.057036]).addTo(map)
+            .bindPopup('Chapinero, Bogotá')
+            .openPopup();
+
+        map.on('click', function(e) {
+            const { lat, lng } = e.latlng;
+            const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`;
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    const address = data.address;
+                    const barrio = address.neighbourhood || 'Barrio desconocido';
+                    const localidad = address.suburb || 'Localidad desconocida';
+                    document.getElementById('location-input').value = `${barrio}, ${localidad}`;
+                    document.getElementById('search-input').value = removeFirstWord(localidad);
+                })
+                .catch(error => {
+                    console.error('Error al obtener la ubicación:', error);
+                });
+        });
+
+        function removeFirstWord(text) {
+            if (text.includes(' ')) {
+                const words = text.split(' ').slice(1);
+                return words.join(' ');
+            }
+            return text;
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
 </html>

@@ -54,7 +54,7 @@ app.post("/iniciarSesion", async (req, res) => {
                 pagina = "paginaPrincipalAdmin.html";
             }
 
-            const url = `/${pagina}?nombre=${encodeURIComponent(user.nombre)}&apellido=${encodeURIComponent(user.apellido)}&plan=${encodeURIComponent(user.nombre_plan)}`;
+            const url = `/${pagina}?nombre=${encodeURIComponent(user.nombre)}&apellido=${encodeURIComponent(user.apellido)}&plan=${encodeURIComponent(user.nombre_plan)}&correo=${encodeURIComponent(user.correo)}`;
 
             return res.json({ redirectUrl: url });
         } else {
